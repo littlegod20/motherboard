@@ -1,0 +1,118 @@
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { DetailField, FailureSignItem, SectionLabel } from '../components/common';
+import { ImageIcon } from '../components/icons';
+import { colors } from '../theme/colors';
+import { monoFontFamily } from '../theme/typography';
+import { componentDetails } from '../data/mock';
+import type { ScanStackParamList, HomeStackParamList } from '../navigation/types';
+
+type Props = NativeStackScreenProps<ScanStackParamList | HomeStackParamList, 'Result'>;
+
+export function ResultScreen({ route, navigation }: Props) {
+  const detail = componentDetails[route.params.componentId] ?? componentDetails.c47;
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.photo}>
+        <ImageIcon size={36} color={colors.borderSubtle} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.backLink} onPress={() => navigation.goBack()}>
+          ← BACK TO SCAN
+        </Text>
+
+        <Text style={styles.title}>{detail.name.toUpperCase()}</Text>
+        <Text style={styles.designator}>{detail.designator}</Text>
+
+        <View style={styles.confidenceRow}>
+          <Text style={styles.confidenceValue}>{detail.confidence}%</Text>
+          <Text style={styles.confidenceLabel}>CONFIDENCE</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <DetailField label="TYPE" value={detail.type} />
+        <DetailField label="PACKAGE" value={detail.package} />
+        <DetailField label="VOLTAGE" value={detail.voltage} />
+        <DetailField label="RELATED" value={detail.related} />
+        <DetailField label="DATASHEET" value="View spec →" linkValue showDivider={false} />
+
+        <View style={styles.divider} />
+
+        <SectionLabel>KNOWN FAILURE SIGNS</SectionLabel>
+        {detail.knownFailureSigns.map((sign) => (
+          <FailureSignItem key={sign} text={sign} />
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  photo: {
+    height: 260,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderSubtle,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 24,
+  },
+  backLink: {
+    fontFamily: monoFontFamily,
+    color: colors.textMuted,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  title: {
+    fontFamily: monoFontFamily,
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  designator: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 20,
+  },
+  confidenceValue: {
+    fontFamily: monoFontFamily,
+    color: colors.teal,
+    fontSize: 40,
+    fontWeight: '800',
+    marginRight: 10,
+  },
+  confidenceLabel: {
+    fontFamily: monoFontFamily,
+    color: colors.textMuted,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    fontWeight: '700',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginVertical: 8,
+  },
+});
