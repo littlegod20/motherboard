@@ -1,0 +1,11 @@
+{
+  "name": "motherboard",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace apps/mobile",
+    "backend": "npm run start:dev --workspace apps/backend"
+  }
+}
