@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute, RouteProp } from '@react-navigation/native';
 import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeStackNavigator } from './HomeStackNavigator';
 import { ScanStackNavigator } from './ScanStackNavigator';
 import { TriageStackNavigator } from './TriageStackNavigator';
@@ -16,15 +17,26 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 // Full-screen camera/capture screens hide the tab bar; list/summary screens keep it.
 const IMMERSIVE_ROUTES = ['ScanLive', 'ScanCapture', 'TriageCheckCapture'];
 
-function getTabBarStyle(route: RouteProp<RootTabParamList, keyof RootTabParamList>) {
-  const focusedRouteName = getFocusedRouteNameFromRoute(route);
-  if (focusedRouteName && IMMERSIVE_ROUTES.includes(focusedRouteName)) {
-    return { display: 'none' as const };
-  }
-  return styles.tabBar;
-}
-
 export function RootNavigator() {
+  const insets = useSafeAreaInsets();
+
+  const tabBarStyle = {
+    backgroundColor: colors.background,
+    borderTopColor: colors.borderSubtle,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    height: 56 + insets.bottom,
+    paddingTop: 6,
+    paddingBottom: insets.bottom + 8,
+  };
+
+  function getTabBarStyle(route: RouteProp<RootTabParamList, keyof RootTabParamList>) {
+    const focusedRouteName = getFocusedRouteNameFromRoute(route);
+    if (focusedRouteName && IMMERSIVE_ROUTES.includes(focusedRouteName)) {
+      return { display: 'none' as const };
+    }
+    return tabBarStyle;
+  }
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -32,7 +44,7 @@ export function RootNavigator() {
         tabBarActiveTintColor: colors.teal,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarShowLabel: true,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle,
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
@@ -83,14 +95,6 @@ export function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.background,
-    borderTopColor: colors.borderSubtle,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    height: 64,
-    paddingTop: 6,
-    paddingBottom: 8,
-  },
   tabBarLabel: {
     fontFamily: monoFontFamily,
     fontSize: 10,
