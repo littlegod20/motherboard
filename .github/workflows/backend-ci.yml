@@ -1,0 +1,87 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'apps/backend/**'
+      - 'package-lock.json'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/backend/**'
+      - 'package-lock.json'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: boardscan
+          POSTGRES_PASSWORD: boardscan
+          POSTGRES_DB: boardscan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U boardscan -d boardscan"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    env:
+      DATABASE_URL: postgresql://boardscan:boardscan@localhost:5432/boardscan?schema=public
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-min-32-characters!!!!
+      JWT_REFRESH_SECRET: ci-refresh-secret-min-32-characters!!!
+      CORS_ORIGINS: http://localhost:8081
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        working-directory: .
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Validate schema
+        run: npx prisma validate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Unit tests
+        run: npm test -- --passWithNoTests
+
+      - name: Build
+        run: npm run build
+
+      - name: E2E tests
+        run: npm run test:e2e

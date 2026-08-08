@@ -20,16 +20,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.client = new Redis(url, {
       maxRetriesPerRequest: 2,
       lazyConnect: true,
-      enableOfflineQueue: false,
+      enableReadyCheck: true,
+      retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
     });
 
     this.client.on('error', (err) => {
       this.ready = false;
       this.logger.warn(`Redis error: ${err.message}`);
     });
-    this.client.on('connect', () => {
+    this.client.on('ready', () => {
       this.ready = true;
-      this.logger.log('Redis connected');
+      this.logger.log('Redis ready');
     });
 
     try {
@@ -45,12 +46,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     if (this.client) {
-      await this.client.quit().catch(() => undefined);
+      try {
+        this.client.disconnect();
+      } catch {
+        // ignore
+      }
     }
   }
 
   isReady(): boolean {
-    return this.ready && this.client.status === 'ready';
+    return this.ready && this.client?.status === 'ready';
   }
 
   getClient(): Redis {
@@ -109,7 +114,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     try {
       const multi = this.client.multi();
       multi.zremrangebyscore(redisKey, 0, windowStart);
-      multi.zadd(redisKey, now.toString(), `${now}`);
+      multi.zadd(redisKey, now.toString(), `${now}-${Math.random()}`);
       multi.zcard(redisKey);
       multi.expire(redisKey, windowSec);
       const results = await multi.exec();

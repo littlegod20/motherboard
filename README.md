@@ -68,7 +68,23 @@ Navigation uses bottom tabs with nested stacks; immersive camera screens hide th
 
 ## Backend
 
-NestJS starter on port `3000` (or `PORT`). Extend `apps/backend/src` for scan ingestion, triage results, and history APIs as the mobile app moves off mock data.
+NestJS API on port `3000` (or `PORT`) with `/api/v1` prefix. Swagger docs at `/api/docs` in non-production.
+
+### Local infra
+
+```bash
+# Postgres (5435) + Redis (6381)
+docker compose up -d postgres redis
+
+# Copy env and migrate
+cp apps/backend/.env.example apps/backend/.env
+npm run prisma:migrate --workspace apps/backend
+
+# Run API
+npm run backend
+```
+
+Key routes: auth, `POST /scan`, triage sessions, billing (Stripe), `GET /health` + `GET /ready`.
 
 ## Development notes
 
