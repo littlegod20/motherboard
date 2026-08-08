@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsString, IsUrl } from 'class-validator';
 
 export class AnalyzeCheckDto {
-  @ApiProperty({ description: 'Base64 or data-URL image for this check' })
+  @ApiProperty({ description: 'Cloudinary HTTPS URL for this check image' })
   @IsString()
-  image!: string;
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  imageUrl!: string;
 }

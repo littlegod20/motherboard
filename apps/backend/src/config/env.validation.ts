@@ -27,4 +27,8 @@ export const envValidationSchema = Joi.object({
   BURST_RATE_LIMIT: Joi.number().default(5),
   BURST_RATE_WINDOW_SEC: Joi.number().default(60),
   SCAN_CACHE_TTL_SEC: Joi.number().default(86400),
+  CLOUDINARY_CLOUD_NAME: Joi.string().allow('').default(''),
+  CLOUDINARY_API_KEY: Joi.string().allow('').default(''),
+  CLOUDINARY_API_SECRET: Joi.string().allow('').default(''),
+  CLOUDINARY_FOLDER: Joi.string().default('boardscan'),
 });

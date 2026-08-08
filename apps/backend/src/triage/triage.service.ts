@@ -14,7 +14,7 @@ import {
 } from '@prisma/client';
 import { AiService } from '../ai/ai.service';
 import { RedisService } from '../cache/redis.service';
-import { decodeImagePayload } from '../common/utils/image.util';
+import { ImageFetchService } from '../media/image-fetch.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuotaService } from '../users/quota.service';
 import { DEFAULT_TRIAGE_CHECKLIST } from './triage.checklist';
@@ -27,6 +27,7 @@ export class TriageService {
     private readonly redis: RedisService,
     private readonly quota: QuotaService,
     private readonly config: ConfigService,
+    private readonly images: ImageFetchService,
   ) {}
 
   async createSession(userId: string) {
@@ -87,7 +88,7 @@ export class TriageService {
     userId: string,
     sessionId: string,
     checkKey: string,
-    imagePayload: string,
+    imageUrl: string,
   ) {
     await this.enforceBurstLimit(userId);
 
@@ -121,7 +122,7 @@ export class TriageService {
     const template = DEFAULT_TRIAGE_CHECKLIST.find(
       (c) => c.checkKey === checkKey,
     );
-    const image = decodeImagePayload(imagePayload);
+    const image = await this.images.fetchAllowlistedImage(imageUrl);
     const cacheKey = `triage:result:${image.hash}:${checkKey}`;
     const ttl = this.config.get<number>('SCAN_CACHE_TTL_SEC', 86400);
 

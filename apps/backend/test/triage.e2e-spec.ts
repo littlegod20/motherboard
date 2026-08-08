@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import {
   createTestApp,
-  TINY_PNG_BASE64,
+  TEST_IMAGE_URL,
 } from './helpers/create-test-app';
 
 describe('Triage (e2e)', () => {
@@ -34,7 +34,7 @@ describe('Triage (e2e)', () => {
     const check = await request(app.getHttpServer())
       .post(`/api/v1/triage/sessions/${sessionId}/checks/power-connectors`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ image: TINY_PNG_BASE64 })
+      .send({ imageUrl: TEST_IMAGE_URL })
       .expect(201);
 
     expect(check.body.status).toBe('pass');

@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import {
   createTestApp,
-  TINY_PNG_BASE64,
+  TEST_IMAGE_URL,
 } from './helpers/create-test-app';
 import { RedisService } from '../src/cache/redis.service';
 
@@ -28,7 +28,7 @@ describe('Scan (e2e)', () => {
       .post('/api/v1/scan')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
-        croppedImage: TINY_PNG_BASE64,
+        imageUrl: TEST_IMAGE_URL,
         tapX: 0.5,
         tapY: 0.5,
       })
@@ -37,6 +37,7 @@ describe('Scan (e2e)', () => {
     expect(scan.body.name).toBe('Electrolytic Capacitor');
     expect(scan.body.scanId).toBeDefined();
     expect(scan.body.confidence).toBe(96);
+    expect(scan.body.imageUrl).toBe(TEST_IMAGE_URL);
 
     const history = await request(app.getHttpServer())
       .get('/api/v1/scan/history')
@@ -60,7 +61,6 @@ describe('Scan (e2e)', () => {
       .send({ email, password: 'password123' });
     const token = reg.body.accessToken as string;
 
-    // Pre-fill rate limit bucket
     const userId = reg.body.user.id as string;
     for (let i = 0; i < 5; i++) {
       await redis.checkRateLimit(`user:${userId}:scan`, 5, 60);
@@ -70,7 +70,7 @@ describe('Scan (e2e)', () => {
       .post('/api/v1/scan')
       .set('Authorization', `Bearer ${token}`)
       .send({
-        croppedImage: TINY_PNG_BASE64,
+        imageUrl: TEST_IMAGE_URL,
         tapX: 0.2,
         tapY: 0.2,
       });

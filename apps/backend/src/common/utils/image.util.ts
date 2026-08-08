@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { createHash } from 'crypto';
 
-const MAX_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 const MAGIC: Array<{ mime: string; bytes: number[] }> = [
   { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
@@ -16,49 +16,28 @@ export type DecodedImage = {
   hash: string;
 };
 
-export function decodeImagePayload(input: string): DecodedImage {
-  if (!input || typeof input !== 'string') {
-    throw new BadRequestException({
-      code: 'INVALID_IMAGE',
-      message: 'croppedImage is required',
-    });
-  }
-
-  let base64 = input;
-  let mimeHint: string | undefined;
-
-  const dataUrl = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/s.exec(input);
-  if (dataUrl) {
-    mimeHint = dataUrl[1];
-    base64 = dataUrl[2];
-  }
-
-  let buffer: Buffer;
-  try {
-    buffer = Buffer.from(base64, 'base64');
-  } catch {
-    throw new BadRequestException({
-      code: 'INVALID_IMAGE',
-      message: 'Image must be valid base64',
-    });
-  }
-
-  if (buffer.length === 0 || buffer.length > MAX_BYTES) {
+export function decodeImageBuffer(
+  buffer: Buffer,
+  mimeHint?: string,
+): DecodedImage {
+  if (buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) {
     throw new BadRequestException({
       code: 'IMAGE_TOO_LARGE',
-      message: `Image must be between 1 byte and ${MAX_BYTES} bytes`,
+      message: `Image must be between 1 byte and ${MAX_IMAGE_BYTES} bytes`,
     });
   }
 
   const mimeType = detectMime(buffer) || mimeHint;
-  if (!mimeType || !['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)) {
+  if (
+    !mimeType ||
+    !['image/jpeg', 'image/png', 'image/webp'].includes(mimeType)
+  ) {
     throw new BadRequestException({
       code: 'INVALID_IMAGE_TYPE',
       message: 'Only JPEG, PNG, and WebP images are allowed',
     });
   }
 
-  // Re-encode clean base64 without data-url prefix
   const cleanBase64 = buffer.toString('base64');
   const hash = createHash('sha256').update(buffer).digest('hex');
 
@@ -69,7 +48,6 @@ function detectMime(buffer: Buffer): string | null {
   for (const entry of MAGIC) {
     if (entry.bytes.every((b, i) => buffer[i] === b)) {
       if (entry.mime === 'image/webp') {
-        // RIFF....WEBP
         if (buffer.length >= 12 && buffer.toString('ascii', 8, 12) === 'WEBP') {
           return 'image/webp';
         }

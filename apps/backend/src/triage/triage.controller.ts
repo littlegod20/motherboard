@@ -52,7 +52,7 @@ export class TriageController {
     @Param('checkKey') checkKey: string,
     @Body() dto: AnalyzeCheckDto,
   ) {
-    return this.triageService.analyzeCheck(user.id, id, checkKey, dto.image);
+    return this.triageService.analyzeCheck(user.id, id, checkKey, dto.imageUrl);
   }
 
   @Post('sessions/:id/complete')

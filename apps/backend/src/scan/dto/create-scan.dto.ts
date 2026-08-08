@@ -1,15 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
 
 export class CreateScanDto {
-  @ApiProperty({ description: 'Base64 or data-URL of cropped region' })
+  @ApiProperty({ description: 'Cloudinary HTTPS URL of cropped region' })
   @IsString()
-  croppedImage!: string;
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  imageUrl!: string;
 
-  @ApiPropertyOptional({ description: 'Optional full-frame base64 image' })
+  @ApiPropertyOptional({ description: 'Optional full-frame Cloudinary URL' })
   @IsOptional()
   @IsString()
-  fullImage?: string;
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  fullImageUrl?: string;
 
   @ApiProperty({ minimum: 0, maximum: 1 })
   @IsNumber()

@@ -10,7 +10,7 @@ import { FeedbackRating, Prisma, Tier } from '@prisma/client';
 import { AiService } from '../ai/ai.service';
 import { ComponentResult } from '../ai/schemas/component-result.schema';
 import { RedisService } from '../cache/redis.service';
-import { decodeImagePayload } from '../common/utils/image.util';
+import { ImageFetchService } from '../media/image-fetch.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuotaService } from '../users/quota.service';
 import { CreateScanDto } from './dto/create-scan.dto';
@@ -23,6 +23,7 @@ export class ScanService {
     private readonly redis: RedisService,
     private readonly quota: QuotaService,
     private readonly config: ConfigService,
+    private readonly images: ImageFetchService,
   ) {}
 
   async createScan(userId: string, dto: CreateScanDto) {
@@ -44,7 +45,7 @@ export class ScanService {
       });
     }
 
-    const image = decodeImagePayload(dto.croppedImage);
+    const image = await this.images.fetchAllowlistedImage(dto.imageUrl);
     const cacheKey = `scan:result:${image.hash}`;
     const ttl = this.config.get<number>('SCAN_CACHE_TTL_SEC', 86400);
 
@@ -79,6 +80,7 @@ export class ScanService {
         tapY: dto.tapY,
         componentName: result.name,
         confidence: result.confidence,
+        thumbnailUrl: dto.imageUrl,
         aiResponse: result as unknown as Prisma.InputJsonValue,
       },
     });
@@ -87,7 +89,13 @@ export class ScanService {
       await this.quota.consumeScan(userId);
     }
 
-    return this.toScanResponse(scan.id, result, provider, cacheHit);
+    return this.toScanResponse(
+      scan.id,
+      result,
+      provider,
+      cacheHit,
+      scan.thumbnailUrl,
+    );
   }
 
   async history(userId: string, page = 1, limit = 20, q?: string) {
@@ -121,6 +129,7 @@ export class ScanService {
         title: s.componentName,
         timestamp: s.createdAt.toISOString(),
         confidence: Math.round(s.confidence * 100),
+        thumbnailUrl: s.thumbnailUrl,
       })),
       page: user.tier === Tier.FREE ? 1 : page,
       limit: take,
@@ -142,7 +151,13 @@ export class ScanService {
 
     const result = scan.aiResponse as ComponentResult;
     return {
-      ...this.toScanResponse(scan.id, result, 'stored', false),
+      ...this.toScanResponse(
+        scan.id,
+        result,
+        'stored',
+        false,
+        scan.thumbnailUrl,
+      ),
       feedback: scan.feedback?.rating?.toLowerCase() ?? null,
       createdAt: scan.createdAt.toISOString(),
     };
@@ -201,6 +216,7 @@ export class ScanService {
     result: ComponentResult,
     provider: string,
     cacheHit: boolean,
+    imageUrl?: string | null,
   ) {
     const confidencePct = Math.round(result.confidence * 100);
     return {
@@ -218,6 +234,7 @@ export class ScanService {
       description: result.description,
       upgradeNotes: result.upgradeNotes,
       specifications: result.specifications,
+      imageUrl: imageUrl ?? null,
       provider,
       cacheHit,
     };

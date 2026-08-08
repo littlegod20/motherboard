@@ -14,3 +14,7 @@ process.env.OPENAI_API_KEY = '';
 process.env.STRIPE_SECRET_KEY = '';
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_secret';
 process.env.STRIPE_PRO_PRICE_ID = '';
+process.env.CLOUDINARY_CLOUD_NAME = 'demo';
+process.env.CLOUDINARY_API_KEY = 'test';
+process.env.CLOUDINARY_API_SECRET = 'test';
+process.env.CLOUDINARY_FOLDER = 'boardscan';
