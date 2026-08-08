@@ -1,10 +1,10 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
-export type AuthUser = {
-  id: string;
-  email: string;
-  tier: 'FREE' | 'PRO';
-};
+export class AuthUser {
+  id!: string;
+  email!: string;
+  tier!: 'FREE' | 'PRO';
+}
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthUser => {
