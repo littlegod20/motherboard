@@ -2,6 +2,8 @@
 
 Camera-based diagnostics for PC motherboards. Scan boards to identify components, review confidence scores, and run guided dead-board triage — from a React Native mobile app backed by a NestJS API.
 
+Images are uploaded **directly to Cloudinary**; the API accepts HTTPS image URLs only (no base64 bodies).
+
 ## Monorepo layout
 
 ```
@@ -14,14 +16,17 @@ motherboard/
 
 | App | Stack | Role |
 |-----|--------|------|
-| `apps/mobile` | Expo 57, React Native, React Navigation, React Native Paper | Scan, triage, history, and settings UI |
-| `apps/backend` | NestJS 11, TypeScript | API server (starter) |
+| `apps/mobile` | Expo 57, React Navigation, Paper, Zustand | Auth-gated scan, triage, history, settings |
+| `apps/backend` | NestJS 11, Prisma, Postgres, Redis | Auth, scan/triage AI, Cloudinary sign, Stripe |
 
 ## Prerequisites
 
 - **Node.js** 20+ (LTS recommended)
 - **npm** 10+ (workspaces)
-- For native device runs: [Expo Go](https://expo.dev/go), or iOS Simulator / Android emulator
+- Docker (Postgres + Redis)
+- Cloudinary account (cloud name, API key, API secret)
+- Optional: Anthropic / OpenAI keys for live vision; Stripe keys for Pro billing
+- Device/emulator: [Expo Go](https://expo.dev/go) or dev client
 
 ## Getting started
 
@@ -29,65 +34,63 @@ motherboard/
 # Install all workspace dependencies
 npm install
 
-# Mobile (Expo)
-npm run mobile
+# Infra
+docker compose up -d postgres redis
 
-# Backend (Nest watch mode, default http://localhost:3000)
+# Backend env
+cp apps/backend/.env.example apps/backend/.env
+# Set CLOUDINARY_*, JWT secrets, and optionally AI/Stripe keys
+
+npm run prisma:migrate --workspace apps/backend
 npm run backend
+
+# Mobile env
+cp apps/mobile/.env.example apps/mobile/.env
+# EXPO_PUBLIC_API_URL=http://<your-lan-ip>:3000/api/v1
+# EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME=<cloud name>
+
+npm run mobile
 ```
 
-### Mobile app scripts
+On a physical device, `localhost` will not reach your machine — use your LAN IP in `EXPO_PUBLIC_API_URL`, and ensure the backend is listening on `0.0.0.0` (Nest default).
+
+### Mobile scripts
 
 ```bash
-npm run start --workspace apps/mobile      # Expo DevTools
-npm run android --workspace apps/mobile   # Android
-npm run ios --workspace apps/mobile       # iOS
-npm run web --workspace apps/mobile       # Web
+npm run start --workspace apps/mobile
+npm run android --workspace apps/mobile
+npm run ios --workspace apps/mobile
+npm run web --workspace apps/mobile
 ```
 
 ### Backend scripts
 
 ```bash
-npm run start:dev --workspace apps/backend   # watch mode
+npm run start:dev --workspace apps/backend
 npm run build --workspace apps/backend
 npm run test --workspace apps/backend
 npm run test:e2e --workspace apps/backend
 ```
 
-## Mobile features
+## App flow
 
-The BoardScan client ships with a dark diagnostic UI and mock data for:
+1. **Login / Register** (required) — JWT access + refresh in SecureStore  
+2. **Scan** — camera or gallery → tap component → crop → Cloudinary upload → `POST /scan`  
+3. **Result / History** — load by UUID; thumbs feedback  
+4. **Triage** — session checklist → per-check capture/upload → complete + primary suspect  
+5. **Settings** — quota/tier, Stripe checkout/portal, logout  
 
-- **Home** — quick entry to scan and dead-board triage, recent results
-- **Scan** — live viewfinder, component capture, and result detail (designator, package, failure signs)
-- **Triage** — guided multi-check flow (connectors, capacitors, VRM MOSFETs, CMOS, shorts)
-- **History** — past scans with confidence
-- **Settings** — app preferences
+## API notes
 
-Navigation uses bottom tabs with nested stacks; immersive camera screens hide the tab bar.
-
-## Backend
-
-NestJS API on port `3000` (or `PORT`) with `/api/v1` prefix. Swagger docs at `/api/docs` in non-production.
-
-### Local infra
-
-```bash
-# Postgres (5435) + Redis (6381)
-docker compose up -d postgres redis
-
-# Copy env and migrate
-cp apps/backend/.env.example apps/backend/.env
-npm run prisma:migrate --workspace apps/backend
-
-# Run API
-npm run backend
-```
-
-Key routes: auth, `POST /scan`, triage sessions, billing (Stripe), `GET /health` + `GET /ready`.
+- Base: `http://host:3000/api/v1` (Swagger at `/api/docs` in non-prod)
+- `POST /media/sign` — Cloudinary signed upload params  
+- `POST /scan` body: `{ imageUrl, fullImageUrl?, tapX, tapY }`  
+- Triage analyze: `{ imageUrl }`  
+- Health: `GET /health`, `GET /ready` (no `/api/v1` prefix)
 
 ## Development notes
 
-- Root scripts target workspaces: `npm run mobile` / `npm run backend`
-- Mobile Expo docs for this project: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/)
-- Backend Nest docs: [docs.nestjs.com](https://docs.nestjs.com)
+- Root scripts: `npm run mobile` / `npm run backend`
+- Expo SDK 57 docs: https://docs.expo.dev/versions/v57.0.0/
+- Nest docs: https://docs.nestjs.com
+- Never commit `.env` files; use `.env.example` templates
