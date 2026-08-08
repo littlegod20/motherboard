@@ -10,14 +10,14 @@ export const linking: LinkingOptions<RootTabParamList> = {
       HomeTab: {
         screens: {
           Home: '',
-          Result: 'result/:componentId',
+          Result: 'result/:scanId',
         },
       },
       ScanTab: {
         screens: {
           ScanLive: 'scan',
           ScanCapture: 'scan/capture',
-          Result: 'scan/result/:componentId',
+          Result: 'scan/result/:scanId',
         },
       },
       TriageTab: {
@@ -30,6 +30,7 @@ export const linking: LinkingOptions<RootTabParamList> = {
       HistoryTab: {
         screens: {
           History: 'history',
+          Result: 'history/result/:scanId',
         },
       },
       SettingsTab: {
