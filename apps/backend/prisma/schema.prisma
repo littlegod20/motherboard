@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Tier {
+  FREE
+  PRO
+}
+
+enum FeedbackRating {
+  UP
+  DOWN
+}
+
+enum TriageSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TriageCheckStatus {
+  PASS
+  FAIL
+  PENDING
+  SKIPPED
+}
+
+model User {
+  id                   String    @id @default(uuid()) @db.Uuid
+  email                String    @unique @db.VarChar(255)
+  passwordHash         String    @map("password_hash")
+  tier                 Tier      @default(FREE)
+  scansUsedThisMonth   Int       @default(0) @map("scans_used_this_month")
+  scanQuotaResetAt     DateTime  @default(now()) @map("scan_quota_reset_at") @db.Timestamptz
+  stripeCustomerId     String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?   @unique @map("stripe_subscription_id")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  refreshTokens   RefreshToken[]
+  scans           Scan[]
+  triageSessions  TriageSession[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  familyId  String    @map("family_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model Scan {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  imageHash    String   @map("image_hash")
+  tapX         Float    @map("tap_x")
+  tapY         Float    @map("tap_y")
+  componentName String  @map("component_name")
+  aiResponse   Json     @map("ai_response")
+  confidence   Float
+  thumbnailUrl String?  @map("thumbnail_url")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback ScanFeedback?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([imageHash])
+  @@map("scans")
+}
+
+model ScanFeedback {
+  id        String         @id @default(uuid()) @db.Uuid
+  scanId    String         @unique @map("scan_id") @db.Uuid
+  rating    FeedbackRating
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@map("scan_feedback")
+}
+
+model TriageSession {
+  id             String              @id @default(uuid()) @db.Uuid
+  userId         String              @map("user_id") @db.Uuid
+  status         TriageSessionStatus @default(IN_PROGRESS)
+  primarySuspect Json?               @map("primary_suspect")
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  completedAt    DateTime?           @map("completed_at") @db.Timestamptz
+
+  user   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checks TriageCheckResult[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("triage_sessions")
+}
+
+model TriageCheckResult {
+  id         String            @id @default(uuid()) @db.Uuid
+  sessionId  String            @map("session_id") @db.Uuid
+  checkKey   String            @map("check_key")
+  label      String
+  detail     String
+  status     TriageCheckStatus @default(PENDING)
+  confidence Float?
+  resultText String?           @map("result_text")
+  aiResponse Json?             @map("ai_response")
+  imageHash  String?           @map("image_hash")
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  session TriageSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, checkKey])
+  @@index([sessionId])
+  @@map("triage_check_results")
+}
+
+model StripeEvent {
+  id        String   @id
+  type      String
+  processedAt DateTime @default(now()) @map("processed_at") @db.Timestamptz
+
+  @@map("stripe_events")
+}
