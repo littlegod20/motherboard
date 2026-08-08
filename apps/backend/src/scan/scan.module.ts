@@ -1,0 +1,14 @@
+import { Module } from '@nestjs/common';
+import { AiModule } from '../ai/ai.module';
+import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
+import { ScanController } from './scan.controller';
+import { ScanService } from './scan.service';
+
+@Module({
+  imports: [AiModule, AuthModule, UsersModule],
+  controllers: [ScanController],
+  providers: [ScanService],
+  exports: [ScanService],
+})
+export class ScanModule {}

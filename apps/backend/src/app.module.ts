@@ -6,6 +6,8 @@ import { RedisModule } from './cache/redis.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { AiModule } from './ai/ai.module';
+import { ScanModule } from './scan/scan.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -16,6 +18,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     HealthModule,
     AuthModule,
     UsersModule,
+    AiModule,
+    ScanModule,
   ],
   providers: [
     {
