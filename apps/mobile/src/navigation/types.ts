@@ -1,9 +1,14 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+};
+
 export type ScanStackParamList = {
   ScanLive: undefined;
   ScanCapture: undefined;
-  Result: { componentId: string };
+  Result: { scanId: string };
 };
 
 export type TriageStackParamList = {
@@ -14,11 +19,12 @@ export type TriageStackParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
-  Result: { componentId: string };
+  Result: { scanId: string };
 };
 
 export type HistoryStackParamList = {
   History: undefined;
+  Result: { scanId: string };
 };
 
 export type SettingsStackParamList = {

@@ -8,7 +8,11 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0D12",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "BoardScan uses the camera to identify motherboard components.",
+        "NSPhotoLibraryUsageDescription": "BoardScan lets you pick a motherboard photo to identify components."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +22,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.littlegod4.motherboard"
+      "package": "com.littlegod4.motherboard",
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -26,7 +31,24 @@
     "extra": {
       "eas": {
         "projectId": "b796f71a-729d-46e5-8d9d-43c730cbc3c6"
-      }
-    }
+      },
+      "EXPO_PUBLIC_API_URL": "http://localhost:3000/api/v1"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow BoardScan to use the camera for motherboard scans."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow BoardScan to access photos for motherboard scans."
+        }
+      ]
+    ]
   }
 }
