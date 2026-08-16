@@ -23,16 +23,21 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.littlegod4.motherboard",
-      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "EXPO_PUBLIC_API_URL": "http://localhost:3000/api/v1",
       "eas": {
-        "projectId": "b796f71a-729d-46e5-8d9d-43c730cbc3c6"
-      },
-      "EXPO_PUBLIC_API_URL": "http://localhost:3000/api/v1"
+        "projectId": "656785df-f8fa-4aa5-b7e8-c0865e39a747"
+      }
     },
     "plugins": [
       "expo-secure-store",
